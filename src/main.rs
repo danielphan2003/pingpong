@@ -1,4 +1,4 @@
-use tetra::graphics::{self, Color, Texture, DrawParams};
+use tetra::graphics::{self, Color, Texture};
 use tetra::input::{self, Key};
 use tetra::math::Vec2;
 use tetra::{Context, ContextBuilder, State};
@@ -75,40 +75,52 @@ impl GameState {
 impl State for GameState {
     fn draw(&mut self, ctx: &mut Context) -> tetra::Result {
         graphics::clear(ctx, Color::rgb(0.392, 0.584, 0.929));
-        
-        graphics::draw(ctx, &self.player1.texture, Vec2::new(
-            self.player1.position.x,
-            self.player1.position.y
-        ));
-        graphics::draw(ctx, &self.player2.texture, Vec2::new(
-            self.player2.position.x,
-            self.player2.position.y
-        ));
-        graphics::draw(ctx, &self.ball.texture, Vec2::new(
-            self.ball.position.x,
-            self.ball.position.y
-        ));
+
+        draw_texture(ctx, &self.player1);
+        draw_texture(ctx, &self.player2);
+        draw_texture(ctx, &self.ball);
         
         Ok(())
     }
 
     fn update(& mut self, ctx: &mut Context) -> tetra::Result {
-        if input::is_key_down(ctx, Key::W) {
-            self.player1.position.y -= PADDLE_SPEED;
-        }
+        for key in input::get_keys_down(ctx) {
+            match key {
+                // Player 1
+                Key::W => move_up(&mut self.player1), 
+                Key::S => move_down(&mut self.player1), 
 
-        if input::is_key_down(ctx, Key::S) {
-            self.player1.position.y += PADDLE_SPEED;
-        }
+                // Player 2
+                Key::Up => move_up(&mut self.player2), 
+                Key::Down => move_down(&mut self.player2),
 
-        if input::is_key_down(ctx, Key::Up) {
-            self.player2.position.y -= PADDLE_SPEED;
-        }
-
-        if input::is_key_down(ctx, Key::Down) {
-            self.player2.position.y += PADDLE_SPEED;
+                // Other keys
+                _ => {},
+            }
         }
 
         Ok(())
+    }
+}
+
+// Simply draw texture from entity with position
+fn draw_texture(ctx: &mut Context, entity: &Entity) {
+    graphics::draw(ctx, &entity.texture, entity.position);
+}
+
+fn move_up(entity: &mut Entity) {
+    if entity.position.y > 0.0 {
+        entity.position.y -= PADDLE_SPEED;
+    } else {
+        entity.position.y = 0.0;
+    }
+}
+
+fn move_down(entity: &mut Entity) {
+    let half_width: f32 = entity.texture.width() as f32/2.0;
+    if entity.position.y + half_width < WINDOW_HEIGHT {
+        entity.position.y += PADDLE_SPEED;
+    } else {
+        entity.position.y = WINDOW_HEIGHT - half_width;
     }
 }
